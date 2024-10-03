@@ -11,12 +11,19 @@ from logging.handlers import TimedRotatingFileHandler
 script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Configure logging with a rotating log file
-log_file_path = os.path.join(script_directory, 'download_log.log')
-log_handler = TimedRotatingFileHandler(log_file_path, when="W0", interval=1, backupCount=8, encoding="utf-8")
+log_file_path = os.path.join(script_directory, "download_log.log")
+log_handler = TimedRotatingFileHandler(
+    log_file_path, when="W0", interval=1, backupCount=2, encoding="utf-8"
+)
 log_handler.suffix = "%Y-%m-%d.log"  # Include the date in the log file name
 log_handler.maxBytes = 2 * 1024 * 1024  # Set max log file size to 2 megabytes
 
-logging.basicConfig(handlers=[log_handler], level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    handlers=[log_handler],
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
 
 def check_ffmpeg():
     """
@@ -26,10 +33,17 @@ def check_ffmpeg():
         bool: True if FFmpeg is installed, False otherwise.
     """
     try:
-        subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True)
+        subprocess.run(
+            ["ffmpeg", "-version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True,
+        )
         return True
     except subprocess.CalledProcessError:
         return False
+
 
 def create_output_directory(output_directory):
     """
@@ -47,6 +61,7 @@ def create_output_directory(output_directory):
         print(f"Error creating output directory: {e}")
         sys.exit(1)
 
+
 def strip_metadata(file_path):
     """
     Strip metadata from the final downloaded file using FFmpeg.
@@ -63,18 +78,24 @@ def strip_metadata(file_path):
 
         # Construct FFmpeg command to remove all metadata
         cmd = [
-            'ffmpeg',
-            '-hide_banner',
-            '-i', file_path,
-            '-map_metadata', '-1',  # Remove all metadata
-            '-c:v', 'copy',         # Copy video codec without re-encoding
-            '-c:a', 'copy',         # Copy audio codec without re-encoding
-            '-y',                   # Overwrite existing file if needed
-            stripped_file_path
+            "ffmpeg",
+            "-hide_banner",
+            "-i",
+            file_path,
+            "-map_metadata",
+            "-1",  # Remove all metadata
+            "-c:v",
+            "copy",  # Copy video codec without re-encoding
+            "-c:a",
+            "copy",  # Copy audio codec without re-encoding
+            "-y",  # Overwrite existing file if needed
+            stripped_file_path,
         ]
 
         # Run the FFmpeg command
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
 
         # Check for successful execution and handle any errors
         if result.returncode == 0:
@@ -83,7 +104,9 @@ def strip_metadata(file_path):
             logging.info(f"Metadata successfully stripped for: {file_path}")
         else:
             # Log a warning if FFmpeg encountered an issue (e.g., no metadata found)
-            logging.warning(f"FFmpeg encountered a non-critical issue while stripping metadata: {result.stderr}")
+            logging.warning(
+                f"FFmpeg encountered a non-critical issue while stripping metadata: {result.stderr}"
+            )
             # Attempt to replace the file anyway (to maintain consistent behavior)
             if os.path.exists(stripped_file_path):
                 os.replace(stripped_file_path, file_path)
@@ -113,44 +136,58 @@ def download_youtube_media(url, output_directory, audio_only=False):
         create_output_directory(output_directory)
 
         # Set format string based on user choice
-        format_string = 'bestaudio' if audio_only else 'bestvideo+bestaudio/best'
+        format_string = "bestaudio" if audio_only else "bestvideo+bestaudio/best"
 
-        # Output file extension and merge format
-        output_extension = 'mp3' if audio_only else 'mp4'
-        
         # Construct yt-dlp command
         cmd = [
-            'yt-dlp',
-            '-f', format_string,
-            '--output', os.path.join(output_directory, '%(title)s.%(ext)s'),
-            '--merge-output-format', output_extension,  # Merge format set as per the user choice
-            '--restrict-filenames',
-            '--no-mtime',             # Don't use original upload time for file
-            '--no-embed-metadata',    # Do not embed any metadata
-            '--no-progress',          # Suppress download progress display
-            url
+            "yt-dlp",
+            "-f",
+            format_string,
+            "--output",
+            os.path.join(output_directory, "%(title)s.%(ext)s"),
+            "--restrict-filenames",
+            "--no-mtime",  # Don't use original upload time for file
+            "--no-embed-metadata",  # Do not embed any metadata
+            "--no-progress",  # Suppress download progress display
+            url,
         ]
 
+        # If audio only, use --extract-audio and specify the audio format as mp3
+        if audio_only:
+            cmd.append("--extract-audio")
+            cmd.append("--audio-format")
+            cmd.append("mp3")
+        else:
+            # Only include --merge-output-format for video downloads
+            cmd.append("--merge-output-format")
+            cmd.append("mp4")
+
         # Run the yt-dlp command
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True)
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True
+        )
 
         # Log command output for debugging
         logging.info(f"yt-dlp stdout: {result.stdout}")
         logging.info(f"yt-dlp stderr: {result.stderr}")
-        
+
         # Determine the final file path by parsing the yt-dlp output
-        filename_match = re.search(r'\[Merger\] Merging formats into "(.+)"', result.stdout)
+        filename_match = re.search(r"\[download\] Destination: (.+)", result.stdout)
         if filename_match:
             final_file_path = filename_match.group(1)
-            logging.info(f"Download and merge completed successfully: {final_file_path}")
+            logging.info(f"Download completed successfully: {final_file_path}")
 
             # Strip metadata from the final merged file
             strip_metadata(final_file_path)
             print(f"Media downloaded and metadata stripped successfully for URL: {url}")
         else:
             # If the final merged file is not found in output, log and display a warning
-            print(f"Failed to locate the final merged file for URL: {url}. Check log for details.")
-            logging.warning(f"Could not locate final merged file in yt-dlp output for URL: {url}")
+            print(
+                f"Failed to locate the final file for URL: {url}. Check log for details."
+            )
+            logging.warning(
+                f"Could not locate final file in yt-dlp output for URL: {url}"
+            )
 
     except subprocess.CalledProcessError as e:
         logging.error(f"An error occurred while downloading: {e}")
@@ -172,7 +209,7 @@ def process_input(input_str):
         return [input_str]
     elif input_str.lower().endswith(".txt"):
         # If input ends with ".txt", treat it as a path to a text file
-        with open(input_str, 'r') as file:
+        with open(input_str, "r") as file:
             urls = [line.strip() for line in file if line.strip()]
             if not urls:
                 print("Error: The .txt file does not contain valid URLs.")
@@ -183,6 +220,7 @@ def process_input(input_str):
         print("Error: Unknown input format.")
         sys.exit(1)
 
+
 if __name__ == "__main__":
     # Check if FFmpeg is installed
     if not check_ffmpeg():
@@ -191,7 +229,9 @@ if __name__ == "__main__":
 
     # Prompt for YouTube video URL or path to a .txt file
     print("YouTube Media Downloader using yt-dlp")
-    print("Provide a single URL, or a .txt file containing a list of URLs. Example: `url_list.txt`")
+    print(
+        "Provide a single URL, or a .txt file containing a list of URLs. Example: `url_list.txt`"
+    )
     print("Enter the video URL or path to a .txt file:")
     user_input = sys.stdin.readline().strip()
 
@@ -202,16 +242,16 @@ if __name__ == "__main__":
     print("Do you want to download the full (V)ideo or (A)udio only? (V/A):")
     media_choice_input = sys.stdin.readline().strip().lower()
 
-    if media_choice_input == 'a':
+    if media_choice_input == "a":
         audio_only = True
-    elif media_choice_input == 'v':
+    elif media_choice_input == "v":
         audio_only = False
     else:
         print("Invalid choice. Please enter 'V' for video or 'A' for audio.")
         sys.exit(1)
 
     # Set the output directory in the same directory as the script
-    output_directory = os.path.join(script_directory, 'YouTube_downloads')
+    output_directory = os.path.join(script_directory, "YouTube_downloads")
 
     # Download the videos or audio using yt-dlp
     for url in urls_to_process:
