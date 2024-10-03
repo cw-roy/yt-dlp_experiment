@@ -181,10 +181,13 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
             final_file_path = filename_match.group(1)
             logging.info(f"Download completed successfully: {final_file_path}")
 
+            # Extract the video title from the filename
+            video_title = os.path.splitext(os.path.basename(final_file_path))[0]
+
             # Strip metadata from the final merged file
             strip_metadata(final_file_path)
-            print(f"Media downloaded and metadata stripped successfully for URL: {url}")
-            logging.info(f"Media downloaded and metadata stripped successfully for URL: {url}")
+            print(f"Media downloaded and metadata stripped successfully for {video_title}")
+            logging.info(f"Media downloaded and metadata stripped successfully for {video_title}")
         else:
             # If the final merged file is not found in output, log and display a warning
             print(f"Failed to locate the final file for URL: {url}. Check log for details.")
