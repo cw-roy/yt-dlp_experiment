@@ -116,24 +116,26 @@ def strip_metadata(file_path):
     except Exception as e:
         logging.error(f"Error stripping metadata: {e}")
 
-
-def download_youtube_media(url, output_directory, audio_only=False):
+def download_youtube_media(url, base_output_directory, audio_only=False):
     """
     Download a YouTube video or audio given its URL using yt-dlp.
 
     Args:
         url (str): The URL of the YouTube video.
-        output_directory (str): The directory to save the downloaded video or audio.
+        base_output_directory (str): The base directory to save the downloaded video or audio.
         audio_only (bool): If True, only download the audio.
 
     Returns:
         None
     """
     try:
-        logging.info(f"Downloading started for URL: {url}")
+        # Determine the appropriate subdirectory based on whether it's audio or video
+        output_directory = os.path.join(base_output_directory, "Audio" if audio_only else "Video")
 
         # Create the output directory if it doesn't exist
         create_output_directory(output_directory)
+
+        logging.info(f"Downloading started for URL: {url} to {output_directory}")
 
         # Set format string based on user choice
         format_string = "bestaudio" if audio_only else "bestvideo+bestaudio/best"
@@ -192,7 +194,6 @@ def download_youtube_media(url, output_directory, audio_only=False):
     except subprocess.CalledProcessError as e:
         logging.error(f"An error occurred while downloading: {e}")
         print(f"Error: Failed to download URL: {url}. Check the log for more details.")
-
 
 def process_input(input_str):
     """
