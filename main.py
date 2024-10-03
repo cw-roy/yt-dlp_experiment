@@ -59,10 +59,12 @@ def create_output_directory(output_directory):
         os.makedirs(output_directory, exist_ok=True)
     except OSError as e:
         print(f"Error creating output directory: {e}")
+        logging.error(f"Error creating output directory {e}")
         sys.exit(1)
 
 
 def strip_metadata(file_path):
+    
     """
     Strip metadata from the final downloaded file using FFmpeg.
 
@@ -182,18 +184,15 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
             # Strip metadata from the final merged file
             strip_metadata(final_file_path)
             print(f"Media downloaded and metadata stripped successfully for URL: {url}")
+            logging.info(f"Media downloaded and metadata stripped successfully for URL: {url}")
         else:
             # If the final merged file is not found in output, log and display a warning
-            print(
-                f"Failed to locate the final file for URL: {url}. Check log for details."
-            )
-            logging.warning(
-                f"Could not locate final file in yt-dlp output for URL: {url}"
-            )
+            print(f"Failed to locate the final file for URL: {url}. Check log for details.")
+            logging.warning(f"Could not locate final file in yt-dlp output for URL: {url}")
 
     except subprocess.CalledProcessError as e:
-        logging.error(f"An error occurred while downloading: {e}")
         print(f"Error: Failed to download URL: {url}. Check the log for more details.")
+        logging.error(f"An error occurred while downloading: {e}")
 
 def process_input(input_str):
     """
@@ -214,11 +213,13 @@ def process_input(input_str):
             urls = [line.strip() for line in file if line.strip()]
             if not urls:
                 print("Error: The .txt file does not contain valid URLs.")
+                logging.error("The .txt file does not contain valid URLs.")
                 sys.exit(1)
             return urls
     else:
         # Otherwise, treat it as an unknown input
         print("Error: Unknown input format.")
+        logging.error("Unknown input format.")
         sys.exit(1)
 
 
@@ -226,13 +227,12 @@ if __name__ == "__main__":
     # Check if FFmpeg is installed
     if not check_ffmpeg():
         print("Error: FFmpeg not installed.")
+        logging.error("FFmpeg not installed.")
         sys.exit(1)
 
     # Prompt for YouTube video URL or path to a .txt file
     print("YouTube Media Downloader using yt-dlp")
-    print(
-        "Provide a single URL, or a .txt file containing a list of URLs. Example: `url_list.txt`"
-    )
+    print("Provide a single URL, or a .txt file containing a list of URLs. Example: `url_list.txt`")
     print("Enter the video URL or path to a .txt file:")
     user_input = sys.stdin.readline().strip()
 
