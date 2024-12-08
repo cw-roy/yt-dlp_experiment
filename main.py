@@ -142,7 +142,7 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
         # Set format string based on user choice
         format_string = "bestaudio" if audio_only else "bestvideo+bestaudio/best"
 
-        # Construct yt-dlp command
+        # Construct command
         cmd = [
             "yt-dlp",
             "-f",
@@ -172,6 +172,7 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
         )
 
         # Log command output for debugging
+        logging.info(f"yt-dlp command: {' '.join(cmd)}")
         logging.info(f"yt-dlp stdout: {result.stdout}")
         logging.info(f"yt-dlp stderr: {result.stderr}")
 
@@ -195,7 +196,93 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
 
     except subprocess.CalledProcessError as e:
         print(f"Error: Failed to download URL: {url}. Check the log for more details.")
-        logging.error(f"An error occurred while downloading: {e}")
+        logging.error(f"yt-dlp command failed with exit code {e.returncode}")
+        logging.error(f"Command: {' '.join(cmd)}")
+        logging.error(f"Error output: {e.stderr}")
+        sys.exit(1)  # Exit after logging the error
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}. Check the log for more details.")
+        logging.error(f"Unexpected error: {e}")
+
+
+# def download_youtube_media(url, base_output_directory, audio_only=False):
+#     """
+#     Download a YouTube video or audio given its URL using yt-dlp.
+
+#     Args:
+#         url (str): The URL of the YouTube video.
+#         base_output_directory (str): The base directory to save the downloaded video or audio.
+#         audio_only (bool): If True, only download the audio.
+
+#     Returns:
+#         None
+#     """
+#     try:
+#         # Determine the appropriate subdirectory based on whether it's audio or video
+#         output_directory = os.path.join(base_output_directory, "Audio" if audio_only else "Video")
+
+#         # Create the output directory if it doesn't exist
+#         create_output_directory(output_directory)
+
+#         logging.info(f"Downloading started for URL: {url} to {output_directory}")
+
+#         # Set format string based on user choice
+#         format_string = "bestaudio" if audio_only else "bestvideo+bestaudio/best"
+
+#         # Construct command
+#         cmd = [
+#             "yt-dlp",
+#             "-f",
+#             format_string,
+#             "--output",
+#             os.path.join(output_directory, "%(title)s.%(ext)s"),
+#             "--restrict-filenames",
+#             "--no-mtime",  # Don't use original upload time for file
+#             "--no-embed-metadata",  # Do not embed any metadata
+#             "--no-progress",  # Suppress download progress display
+#             url,
+#         ]
+
+#         # If audio only, use --extract-audio and specify the audio format as mp3
+#         if audio_only:
+#             cmd.append("--extract-audio")
+#             cmd.append("--audio-format")
+#             cmd.append("mp3")
+#         else:
+#             # Only include --merge-output-format for video downloads
+#             cmd.append("--merge-output-format")
+#             cmd.append("mp4")
+
+#         # Run the yt-dlp command
+#         result = subprocess.run(
+#             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True
+#         )
+
+#         # Log command output for debugging
+#         logging.info(f"yt-dlp stdout: {result.stdout}")
+#         logging.info(f"yt-dlp stderr: {result.stderr}")
+
+#         # Determine the final file path by parsing the yt-dlp output
+#         filename_match = re.search(r"\[download\] Destination: (.+)", result.stdout)
+#         if filename_match:
+#             final_file_path = filename_match.group(1)
+#             logging.info(f"Download completed successfully: {final_file_path}")
+
+#             # Extract the video title from the filename
+#             video_title = os.path.splitext(os.path.basename(final_file_path))[0]
+
+#             # Strip metadata from the final merged file
+#             strip_metadata(final_file_path)
+#             print(f"Media downloaded and metadata stripped successfully for {video_title}")
+#             logging.info(f"Media downloaded and metadata stripped successfully for {video_title}")
+#         else:
+#             # If the final merged file is not found in output, log and display a warning
+#             print(f"Failed to locate the final file for URL: {url}. Check log for details.")
+#             logging.warning(f"Could not locate final file in yt-dlp output for URL: {url}")
+
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error: Failed to download URL: {url}. Check the log for more details.")
+#         logging.error(f"An error occurred while downloading: {e}")
 
 def process_input(input_str):
     """
