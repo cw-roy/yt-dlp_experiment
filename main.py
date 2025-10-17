@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
+import logging
 import os
-import sys
 import re
 import subprocess
-import logging
+import sys
 from logging.handlers import TimedRotatingFileHandler
 
 # Get the directory of the script
@@ -64,7 +64,6 @@ def create_output_directory(output_directory):
 
 
 def strip_metadata(file_path):
-    
     """
     Strip metadata from the final downloaded file using FFmpeg.
 
@@ -118,6 +117,7 @@ def strip_metadata(file_path):
     except Exception as e:
         logging.error(f"Error stripping metadata: {e}")
 
+
 def download_youtube_media(url, base_output_directory, audio_only=False):
     """
     Download a YouTube video or audio given its URL using yt-dlp.
@@ -132,7 +132,9 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
     """
     try:
         # Determine the appropriate subdirectory based on whether it's audio or video
-        output_directory = os.path.join(base_output_directory, "Audio" if audio_only else "Video")
+        output_directory = os.path.join(
+            base_output_directory, "Audio" if audio_only else "Video"
+        )
 
         # Create the output directory if it doesn't exist
         create_output_directory(output_directory)
@@ -187,12 +189,20 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
 
             # Strip metadata from the final merged file
             strip_metadata(final_file_path)
-            print(f"Media downloaded and metadata stripped successfully for {video_title}")
-            logging.info(f"Media downloaded and metadata stripped successfully for {video_title}")
+            print(
+                f"Media downloaded and metadata stripped successfully for {video_title}"
+            )
+            logging.info(
+                f"Media downloaded and metadata stripped successfully for {video_title}"
+            )
         else:
             # If the final merged file is not found in output, log and display a warning
-            print(f"Failed to locate the final file for URL: {url}. Check log for details.")
-            logging.warning(f"Could not locate final file in yt-dlp output for URL: {url}")
+            print(
+                f"Failed to locate the final file for URL: {url}. Check log for details."
+            )
+            logging.warning(
+                f"Could not locate final file in yt-dlp output for URL: {url}"
+            )
 
     except subprocess.CalledProcessError as e:
         print(f"Error: Failed to download URL: {url}. Check the log for more details.")
@@ -203,6 +213,7 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
     except Exception as e:
         print(f"An unexpected error occurred: {e}. Check the log for more details.")
         logging.error(f"Unexpected error: {e}")
+
 
 def process_input(input_str):
     """
@@ -242,7 +253,9 @@ if __name__ == "__main__":
 
     # Prompt for YouTube video URL or path to a .txt file
     print("YouTube Media Downloader using yt-dlp")
-    print("Provide a single URL, or a .txt file containing a list of URLs. Example: `url_list.txt`")
+    print(
+        "Provide a single URL, or a .txt file containing a list of URLs. Example: `url_list.txt`"
+    )
     print("Enter the video URL or path to a .txt file:")
     user_input = sys.stdin.readline().strip()
 
