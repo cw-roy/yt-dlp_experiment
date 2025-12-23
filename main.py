@@ -6,6 +6,8 @@ import re
 import subprocess
 import sys
 from logging.handlers import TimedRotatingFileHandler
+from urllib.parse import urlparse, parse_qs, urlunparse
+
 
 # Get the directory of the script
 script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -44,7 +46,6 @@ def check_ffmpeg():
     except subprocess.CalledProcessError:
         return False
 
-
 def create_output_directory(output_directory):
     """
     Create the output directory if it doesn't exist.
@@ -61,7 +62,6 @@ def create_output_directory(output_directory):
         print(f"Error creating output directory: {e}")
         logging.error(f"Error creating output directory {e}")
         sys.exit(1)
-
 
 def strip_metadata(file_path):
     """
@@ -117,7 +117,6 @@ def strip_metadata(file_path):
     except Exception as e:
         logging.error(f"Error stripping metadata: {e}")
 
-
 def download_youtube_media(url, base_output_directory, audio_only=False):
     """
     Download a YouTube video or audio given its URL using yt-dlp.
@@ -149,6 +148,8 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
             "yt-dlp",
             "-f",
             format_string,
+            "--extractor-args",
+            "youtube:player_client=ios,android",
             "--output",
             os.path.join(output_directory, "%(title)s.%(ext)s"),
             "--restrict-filenames",
@@ -214,7 +215,6 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
         print(f"An unexpected error occurred: {e}. Check the log for more details.")
         logging.error(f"Unexpected error: {e}")
 
-
 def process_input(input_str):
     """
     Determine whether the input is a URL or a path to a .txt file.
@@ -243,6 +243,15 @@ def process_input(input_str):
         logging.error("Unknown input format.")
         sys.exit(1)
 
+def normalize_youtube_url(url: str) -> str:
+    parsed = urlparse(url)
+    qs = parse_qs(parsed.query)
+
+    if "v" in qs:
+        qs = {"v": qs["v"]}
+
+    new_query = "&".join(f"{k}={v[0]}" for k, v in qs.items())
+    return urlunparse(parsed._replace(query=new_query))
 
 if __name__ == "__main__":
     # Check if FFmpeg is installed
@@ -279,4 +288,5 @@ if __name__ == "__main__":
 
     # Download the videos or audio using yt-dlp
     for url in urls_to_process:
+        url = normalize_youtube_url(url)
         download_youtube_media(url, output_directory, audio_only=audio_only)

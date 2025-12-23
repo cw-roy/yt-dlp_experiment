@@ -7,4 +7,6 @@ pycryptodomex==3.21.0
 requests==2.32.3
 urllib3==2.2.3
 websockets==13.1
-yt-dlp==2025.10.14
+# yt-dlp intentionally floating due to frequent upstream breakage
+yt-dlp>=2025.10.14
+
