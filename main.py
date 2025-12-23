@@ -46,6 +46,7 @@ def check_ffmpeg():
     except subprocess.CalledProcessError:
         return False
 
+
 def create_output_directory(output_directory):
     """
     Create the output directory if it doesn't exist.
@@ -62,6 +63,7 @@ def create_output_directory(output_directory):
         print(f"Error creating output directory: {e}")
         logging.error(f"Error creating output directory {e}")
         sys.exit(1)
+
 
 def strip_metadata(file_path):
     """
@@ -116,6 +118,7 @@ def strip_metadata(file_path):
         logging.error(f"File not found for metadata stripping: {file_path}")
     except Exception as e:
         logging.error(f"Error stripping metadata: {e}")
+
 
 def download_youtube_media(url, base_output_directory, audio_only=False):
     """
@@ -215,6 +218,7 @@ def download_youtube_media(url, base_output_directory, audio_only=False):
         print(f"An unexpected error occurred: {e}. Check the log for more details.")
         logging.error(f"Unexpected error: {e}")
 
+
 def process_input(input_str):
     """
     Determine whether the input is a URL or a path to a .txt file.
@@ -243,6 +247,7 @@ def process_input(input_str):
         logging.error("Unknown input format.")
         sys.exit(1)
 
+
 def normalize_youtube_url(url: str) -> str:
     parsed = urlparse(url)
     qs = parse_qs(parsed.query)
@@ -252,6 +257,7 @@ def normalize_youtube_url(url: str) -> str:
 
     new_query = "&".join(f"{k}={v[0]}" for k, v in qs.items())
     return urlunparse(parsed._replace(query=new_query))
+
 
 if __name__ == "__main__":
     # Check if FFmpeg is installed
